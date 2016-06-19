@@ -12,6 +12,8 @@ var cssmin = require('gulp-cssmin');
 var stylus = require('gulp-stylus');
 var stylish = require('jshint-stylish');
 var jshint = require('gulp-jshint');
+var imagemin = require('gulp-imagemin');
+var newer = require('gulp-newer');
 var nib = require('nib');
 var browserSync = require('browser-sync').create();
 
@@ -20,6 +22,8 @@ const paths = {
     projs: './production/js/',
     devstyl: './dev/styl/',
     procss: './production/css/',
+    devimg: './dev/img/',
+    proimg: './production/img/'
 };
 
 const serverUrl = 'localhost';
@@ -63,9 +67,17 @@ gulp.task('browserSync', () => {
     });
 });
 
+gulp.task('images', () => {
+    return gulp.src(paths.devimg + '**')
+        .pipe(newer(paths.proimg))
+        .pipe(imagemin())
+        .pipe(gulp.dest(paths.proimg))
+});
+
 gulp.task('default', ['stylus', 'scripts', 'lint', 'browserSync'], () => {
     gulp.watch(paths.devstyl + '**/*.styl', ['stylus']);
     gulp.watch(paths.devjs   + '**/*.js', ['scripts', 'lint']);
+    gulp.watch(paths.devimg  + '**', ['images']);
     gulp.watch('./**/*.html').on('change', browserSync.reload);
 });
 
