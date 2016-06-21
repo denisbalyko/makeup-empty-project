@@ -13,9 +13,10 @@ var stylus = require('gulp-stylus');
 var stylish = require('jshint-stylish');
 var jshint = require('gulp-jshint');
 var imagemin = require('gulp-imagemin');
-var newer = require('gulp-newer');
+var cache = require('gulp-cache');
 var nib = require('nib');
 var browserSync = require('browser-sync').create();
+var runSequence = require('run-sequence');
 
 const paths = {
     devjs: './dev/js/',
@@ -25,8 +26,6 @@ const paths = {
     devimg: './dev/img/',
     proimg: './production/img/'
 };
-
-const serverUrl = 'localhost';
 
 gulp.task('stylus', () => {
     return gulp.src('./dev/styl/global.styl')
@@ -39,13 +38,16 @@ gulp.task('stylus', () => {
         .pipe(sourcemaps.write())
         .pipe(rename('style.min.css'))
         .pipe(gulp.dest(paths.procss))
-		.pipe(browserSync.stream());
+        .pipe(browserSync.stream());
 });
 
 gulp.task('lint', () => {
     return gulp.src(paths.devjs + '*.js')
         .pipe(jshint())
         .pipe(jshint.reporter(stylish))
+        .pipe(browserSync.reload({
+            stream: true
+        }))
 });
 
 gulp.task('scripts', () => {
@@ -56,28 +58,39 @@ gulp.task('scripts', () => {
         //.pipe(stripDebug())
         .pipe(uglify())
         .pipe(gulp.dest(paths.projs))
-		.pipe(browserSync.stream());
+        .pipe(browserSync.reload({
+            stream: true
+        }))
 });
 
 gulp.task('browserSync', () => {
     browserSync.init({
-		server: {
-			baseDir: './'
-		}
+        server: {
+            baseDir: './'
+        }
     });
 });
 
 gulp.task('images', () => {
-    return gulp.src(paths.devimg + '**')
-        .pipe(newer(paths.proimg))
-        .pipe(imagemin())
-        .pipe(gulp.dest(paths.proimg))
+    return gulp.src('./dev/img/**/*.+(png|jpg|jpeg|gif|svg)')
+        .pipe(cache(imagemin({
+            interlaced: true
+        })))
+        .pipe(gulp.dest('production/img'))
+        .pipe(browserSync.reload({
+            stream: true
+        }))
 });
 
-gulp.task('default', ['stylus', 'scripts', 'lint', 'browserSync'], () => {
+gulp.task('watch', () => {
+    gulp.watch('dev/img/**/*.+(png|jpg|jpeg|gif|svg)', ['images']);
     gulp.watch(paths.devstyl + '**/*.styl', ['stylus']);
     gulp.watch(paths.devjs   + '**/*.js', ['scripts', 'lint']);
-    gulp.watch(paths.devimg  + '**', ['images']);
     gulp.watch('./**/*.html').on('change', browserSync.reload);
 });
 
+gulp.task('default', (callback) => {
+  runSequence(['images', 'stylus', 'scripts', 'lint', 'browserSync', 'watch'],
+    callback
+  )
+})
