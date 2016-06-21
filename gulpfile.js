@@ -90,7 +90,7 @@ gulp.task('watch', () => {
 });
 
 gulp.task('default', (callback) => {
-  runSequence(['images', 'stylus', 'scripts', 'lint', 'browserSync', 'watch'],
-    callback
-  )
+    runSequence(['images', 'stylus', 'scripts', 'lint', 'browserSync', 'watch'],
+        callback
+    )
 })
